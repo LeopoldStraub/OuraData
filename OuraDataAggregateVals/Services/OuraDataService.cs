@@ -54,7 +54,13 @@ namespace OuraDataAggregateVals.Services
             SleepData sleepData;
             try
             {
-                sleepData = JsonConvert.DeserializeObject<SleepData>(await response.Content.ReadAsStringAsync());
+                string sleep = await response.Content.ReadAsStringAsync();
+                sleepData = JsonConvert.DeserializeObject<SleepData>(sleep);
+
+                if(sleepData.Sleep.Length == 0)
+                {
+                    throw new Exception("The Sleepobject has no elements.");
+                }
             }
             catch (Exception)
             {

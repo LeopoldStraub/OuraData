@@ -62,7 +62,11 @@ namespace OuraDataAggregateVals
                 {
                     bool success = sleepTableService.AddEntity(sleepData);
                     if (!success)
-                        log.LogWarning($"SleepData could not be saved. Date: {sleepData.Sleep[0].SummaryDate.ToString()}");
+                        log.LogWarning($"SleepData could not be saved. Date: {day.ToString()}");
+                }
+                else
+                {
+                    log.LogError($"SleepData could not be fetched for date: {day.ToString()}");
                 }
                 
             }
