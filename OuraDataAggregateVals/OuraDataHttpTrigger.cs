@@ -10,42 +10,74 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using OuraDataAggregateVals.Models;
 using Azure.Data.Tables;
+using OuraDataAggregateVals.Services;
+using System.Collections.Generic;
 
 namespace OuraDataAggregateVals
 {
-    public static class OuraDataHttpTrigger
+    public  class OuraDataHttpTrigger
     {
         private const string BASE_URI = "https://api.ouraring.com/v1";
+        private const string DATE_FORMAT = "yyyy-MM-dd";
 
-        [FunctionName("OuraDataHttpTrigger")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+        private ITableService<SleepData> sleepTableService;
+        private IOuraDataService ouraDataService;
+
+        public OuraDataHttpTrigger(ITableService<SleepData> tableService, IOuraDataService dataService)
+        {
+            ouraDataService = dataService;
+            sleepTableService = tableService;
+        }
+
+        [FunctionName("SaveDataFromStartToDay")]
+        public  async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "savedata")] HttpRequest req,
             ILogger log)
         {
-            log.LogInformation("OuraDataHttpTrigger processed a request.");
+            log.LogInformation("SaveDataFromStartToDay processed a request.");
 
-            string startEnd = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd");
-            log.LogInformation(startEnd);
+            string start = req.Query["start"];
+            if(start is null)
+            {
+                return new BadRequestResult();
+            }
 
-            string requestUri = BuildRequestUri("sleep", startEnd, startEnd);
+            DateTime startDate = DateTime.Now;
 
-            HttpClient http = new HttpClient();
+            try
+            {
+                startDate = DateTime.ParseExact(start, DATE_FORMAT, System.Globalization.CultureInfo.CurrentCulture);
 
-            //put bearer token into keyvault.
-            http.DefaultRequestHeaders.Add("Authorization", " Bearer UVW3OSVCANW4K4PVAUP7JY3P22GAOLJG");
+            }catch(FormatException fe)
+            {
+                log.LogError($"Formatting of startDate failed. Given string: {start}");
+            }
 
-            var response = await http.GetAsync(requestUri);
+            DateTime endDate = DateTime.Today.AddDays(-1);
 
-            SleepData sleepData = JsonConvert.DeserializeObject<SleepData>(await response.Content.ReadAsStringAsync());
+            foreach(DateTime day in EachDay(startDate, endDate))
+            {
+                SleepData sleepData = await ouraDataService.FetchDataAsync(day.ToString(DATE_FORMAT));
+                if(!(sleepData is null))
+                {
+                    bool success = sleepTableService.AddEntity(sleepData);
+                    if (!success)
+                        log.LogWarning($"SleepData could not be saved. Date: {sleepData.Sleep[0].SummaryDate.ToString()}");
+                }
+                
+            }
 
-            log.LogInformation(sleepData.Sleep[0].ScoreRem.ToString());
+            
 
             return new OkObjectResult("");
         }
 
-        private static string BuildRequestUri(string category, string start, string end)
+        public IEnumerable<DateTime> EachDay(DateTime from, DateTime thru)
         {
-            return $"{BASE_URI}/{category}?start={start}&end={end}";
+            for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
+                yield return day;
         }
+
+
     }
 }

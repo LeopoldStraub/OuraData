@@ -40,5 +40,28 @@ namespace OuraDataAggregateVals.Services
         {
             return $"{BASE_URI}/{category}?start={start}&end={end}";
         }
+
+        public async Task<SleepData> FetchDataAsync(string startEnd)
+        {
+
+            string requestUri = BuildRequestUri("sleep", startEnd, startEnd);
+            HttpClient http = new HttpClient();
+
+            //put bearer token into keyvault.
+            http.DefaultRequestHeaders.Add("Authorization", $" Bearer {Environment.GetEnvironmentVariable("OURA_TOKEN")}");
+
+            var response = await http.GetAsync(requestUri);
+            SleepData sleepData;
+            try
+            {
+                sleepData = JsonConvert.DeserializeObject<SleepData>(await response.Content.ReadAsStringAsync());
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
+            return sleepData;
+        }
     }
 }

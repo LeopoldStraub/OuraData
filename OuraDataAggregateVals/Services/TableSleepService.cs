@@ -9,6 +9,8 @@ namespace OuraDataAggregateVals.Services
 {
     public class TableSleepService : ITableService<SleepData>
     {
+        private const string DATE_FORMAT = "yyyy-MM-dd";
+
         TableClient tableClient;
 
         public TableSleepService(TableServiceClient tableServiceClient)
@@ -19,7 +21,7 @@ namespace OuraDataAggregateVals.Services
 
         public bool AddEntity(SleepData entity)
         {
-            string partitionKey = DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd");
+            string partitionKey = entity.Sleep[0].SummaryDate.ToString(DATE_FORMAT);
             string rowKey = Guid.NewGuid().ToString();
 
             try

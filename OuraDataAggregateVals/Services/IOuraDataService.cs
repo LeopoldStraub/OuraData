@@ -9,5 +9,6 @@ namespace OuraDataAggregateVals.Services
     public interface IOuraDataService
     {
         public Task<SleepData> FetchDailyDataAsync();
+        public Task<SleepData> FetchDataAsync(string date);
     }
 }
