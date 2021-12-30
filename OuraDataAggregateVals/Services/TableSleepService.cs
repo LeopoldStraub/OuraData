@@ -21,12 +21,11 @@ namespace OuraDataAggregateVals.Services
 
         public bool AddEntity(SleepData entity)
         {
-            string partitionKey = entity.Sleep[0].SummaryDate.ToString(DATE_FORMAT);
-            string rowKey = Guid.NewGuid().ToString();
+            string key = entity.Sleep[0].SummaryDate.ToString(DATE_FORMAT);
 
             try
             {
-                var tableResponse = tableClient.AddEntity<TableEntity>(new TableEntity(partitionKey, rowKey) {
+                var tableResponse = tableClient.AddEntity<TableEntity>(new TableEntity(key, key) {
                 { "sleepdata", JsonConvert.SerializeObject(entity.Sleep[0])}
             });
 
