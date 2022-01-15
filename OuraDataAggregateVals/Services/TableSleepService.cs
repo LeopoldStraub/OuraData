@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Azure.Data.Tables;
 using Newtonsoft.Json;
+using Azure;
 
 namespace OuraDataAggregateVals.Services
 {
@@ -32,9 +33,12 @@ namespace OuraDataAggregateVals.Services
                 return (tableResponse.Status == 200 || tableResponse.Status == 204);
 
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
                 //log the exception
+                return false;
+            }catch(RequestFailedException)
+            {
                 return false;
             }
         }
